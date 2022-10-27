@@ -5,11 +5,14 @@ on:
     branches:
       - master
 
-jobs:
+env:
+  IMAGE_TAG: "v1.0.0"
+
+jobs: 
   build-and-push-image:
     runs-on: ubuntu-latest
     steps:
-
+      
       - name: checkout repo
         uses: actions/checkout@v3
 
@@ -24,11 +27,27 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      -
-        name: Build and push
+      
+      - name: Build and push
         uses: docker/build-push-action@v3
         with:
-          push: true
           context: ./
           file: ./devops/dockerfile
-          tags: marcusvmesquita/chat-livecode-frontend:latest
+          push: true
+          tags: marcusvmesquita/chat-livecode-frontend:latest, marcusvmesquita/chat-livecode-frontend:${{ env.IMAGE_TAG }}
+
+      - name: Create txt file with tag
+        run: echo ${{ env.IMAGE_TAG }} > frontend_tag_staging.txt
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: frontend_tag_staging.txt
+          path: frontend_tag_staging.txt
+
+      - name: Call spec deploy
+        uses: passeidireto/trigger-external-workflow-action@main
+        with:
+          repository: mesquitamv/chat-livecode-spec
+          event: deploy_staging
+          github_pat: ${{ secrets.GIT_TOKEN }}
+      
