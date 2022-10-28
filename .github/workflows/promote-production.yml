@@ -1,0 +1,27 @@
+name: promote production
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs: 
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    steps:
+      
+      - name: Create txt file with tag
+        run: echo ${{ github.ref_name }} > frontend_tag_production.txt
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: frontend_tag_production.txt
+          path: frontend_tag_production.txt
+
+      - name: Call spec deploy
+        uses: passeidireto/trigger-external-workflow-action@main
+        with:
+          repository: mesquitamv/chat-livecode-spec
+          event: deploy_production
+          github_pat: ${{ secrets.GIT_TOKEN }}
+      
